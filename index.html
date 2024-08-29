@@ -1,14 +1,13 @@
 <!doctype html>
 <!-- 
-  Version: 1.0.0 
-  Author: [kuma]
-  Date: [2024-8-29]
+  Version: 1.1.0 
+  Author: [Your Name or Team Name]
+  Date: [YYYY-MM-DD]
   Description: WebAR application with 23 assets (22 MP4 videos, 1 GLB model), including start button for user permissions. 
   Changes:
-    - Initial implementation of camera and motion sensor permissions.
-    - Added support for 22 video assets and 1 GLB model.
-    - Implemented start button to ensure user permissions are obtained.
-    - Fixed visibility issue with start button.
+    - Simplified permission handling process.
+    - Ensured start button hides after permissions are granted.
+    - Implemented clear error handling for permission requests.
 -->
 
 <html>
@@ -38,53 +37,44 @@
                 startButton.style.visibility = 'hidden';
             }
 
-            function startAR() {
-                // カメラの許可をリクエスト
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(stream => {
-                        console.log('カメラアクセス成功');
-                        return requestMotionPermission();
-                    })
-                    .then(response => {
-                        console.log('モーションセンサーアクセス成功:', response);
-                        hideStartButton(); // 許可が取れたらボタンを隠す
-                    })
-                    .catch(error => {
-                        console.error('エラーが発生しました:', error);
-                        hideStartButton(); // エラー時にもボタンを隠す
-                    });
-            }
-
-            function requestMotionPermission() {
-                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                    return DeviceMotionEvent.requestPermission()
-                        .then(permissionState => {
-                            if (permissionState === 'granted') {
-                                console.log('モーションセンサーアクセスが許可されました');
-                                return Promise.resolve('granted');
+            function handlePermissions() {
+                return new Promise((resolve, reject) => {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => {
+                            console.log('カメラアクセス成功');
+                            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                                return DeviceMotionEvent.requestPermission();
                             } else {
-                                return Promise.reject('モーションセンサーアクセスが拒否されました');
+                                return Promise.resolve('not required');
                             }
+                        })
+                        .then(permission => {
+                            if (permission === 'granted' || permission === 'not required') {
+                                console.log('モーションセンサーアクセス成功');
+                                resolve();
+                            } else {
+                                reject('モーションセンサーアクセスが拒否されました');
+                            }
+                        })
+                        .catch(error => {
+                            reject(error);
                         });
-                } else {
-                    console.log('モーションセンサーアクセスの許可が不要');
-                    return Promise.resolve('not required');
-                }
+                });
             }
 
             document.addEventListener('DOMContentLoaded', function () {
                 const startButton = document.getElementById('startButton');
 
                 startButton.addEventListener('click', function () {
-                    // ビデオをロードするだけで再生はしない
-                    const videos = [];
-                    for (let i = 1; i <= 22; i++) {
-                        const video = document.getElementById(`vid${i}`);
-                        video.load();
-                        videos.push(video);
-                    }
-
-                    startAR();
+                    handlePermissions()
+                        .then(() => {
+                            hideStartButton();
+                            console.log('すべての許可が取得されました');
+                        })
+                        .catch(error => {
+                            console.error('許可の取得に失敗しました:', error);
+                            hideStartButton(); // 許可が失敗してもボタンを隠す
+                        });
                 });
             });
         </script>
