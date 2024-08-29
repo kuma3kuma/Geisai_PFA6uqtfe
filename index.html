@@ -73,24 +73,22 @@
                     });
 
                     // カメラの使用許可を取得後にボタンを非表示にする
-                    navigator.mediaDevices.getUserMedia({ video: true })
-                        .then(function(stream) {
+                    const cameraPromise = navigator.mediaDevices.getUserMedia({ video: true });
+
+                    // モーションセンサーの許可が必要な場合は、ここで処理を追加する
+                    let motionPromise = Promise.resolve();
+                    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                        motionPromise = DeviceMotionEvent.requestPermission();
+                    }
+
+                    // 全ての許可が完了した後にボタンを非表示にする
+                    Promise.all([cameraPromise, motionPromise])
+                        .then(function() {
                             hideStartButton();
                         })
                         .catch(function(error) {
-                            console.error('カメラの使用が許可されませんでした:', error);
+                            console.error('許可が取得できませんでした:', error);
                         });
-
-                    // モーションセンサーの許可が必要な場合は、ここで処理を追加する
-                    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                        DeviceMotionEvent.requestPermission()
-                            .then(response => {
-                                if (response === 'granted') {
-                                    hideStartButton();
-                                }
-                            })
-                            .catch(console.error);
-                    }
                 });
             });
         </script>
