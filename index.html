@@ -1,4 +1,16 @@
 <!doctype html>
+<!-- 
+  Version: 1.0.0 
+  Author: [kuma]
+  Date: [2024-8-29]
+  Description: WebAR application with 23 assets (22 MP4 videos, 1 GLB model), including start button for user permissions. 
+  Changes:
+    - Initial implementation of camera and motion sensor permissions.
+    - Added support for 22 video assets and 1 GLB model.
+    - Implemented start button to ensure user permissions are obtained.
+    - Fixed visibility issue with start button.
+-->
+
 <html>
     <head>
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
@@ -17,12 +29,13 @@
                 border-radius: 5px;
                 cursor: pointer;
                 z-index: 9999;
+                visibility: visible;
             }
         </style>
         <script>
             function hideStartButton() {
                 const startButton = document.getElementById('startButton');
-                startButton.style.display = 'none';
+                startButton.style.visibility = 'hidden';
             }
 
             function startAR() {
@@ -34,10 +47,11 @@
                     })
                     .then(response => {
                         console.log('モーションセンサーアクセス成功:', response);
-                        hideStartButton();
+                        hideStartButton(); // 許可が取れたらボタンを隠す
                     })
                     .catch(error => {
                         console.error('エラーが発生しました:', error);
+                        hideStartButton(); // エラー時にもボタンを隠す
                     });
             }
 
