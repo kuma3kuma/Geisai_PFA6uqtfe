@@ -20,75 +20,57 @@
             }
         </style>
         <script>
-            AFRAME.registerComponent('videohandler', {
-                init: function () {
-                    var marker = this.el;
-                    var videoId = this.el.getAttribute('video-id');
-                    this.vid = document.querySelector(videoId);
-
-                    marker.addEventListener('markerFound', function () {
-                        this.vid.play();
-                    }.bind(this));
-
-                    marker.addEventListener('markerLost', function () {
-                        this.vid.pause();
-                        this.vid.currentTime = 0;
-                    }.bind(this));
-                },
-            });
-
-            AFRAME.registerComponent('modelhandler', {
-                init: function () {
-                    var marker = this.el;
-                    var modelId = this.el.getAttribute('model-id');
-                    this.model = document.querySelector(modelId);
-
-                    marker.addEventListener('markerFound', function () {
-                        this.model.setAttribute('visible', 'true');
-                    }.bind(this));
-
-                    marker.addEventListener('markerLost', function () {
-                        this.model.setAttribute('visible', 'false');
-                    }.bind(this));
-                },
-            });
-
             function hideStartButton() {
                 const startButton = document.getElementById('startButton');
                 startButton.style.display = 'none';
             }
 
+            function startAR() {
+                // カメラの許可をリクエスト
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        console.log('カメラアクセス成功');
+                        return requestMotionPermission();
+                    })
+                    .then(response => {
+                        console.log('モーションセンサーアクセス成功:', response);
+                        hideStartButton();
+                    })
+                    .catch(error => {
+                        console.error('エラーが発生しました:', error);
+                    });
+            }
+
+            function requestMotionPermission() {
+                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                    return DeviceMotionEvent.requestPermission()
+                        .then(permissionState => {
+                            if (permissionState === 'granted') {
+                                console.log('モーションセンサーアクセスが許可されました');
+                                return Promise.resolve('granted');
+                            } else {
+                                return Promise.reject('モーションセンサーアクセスが拒否されました');
+                            }
+                        });
+                } else {
+                    console.log('モーションセンサーアクセスの許可が不要');
+                    return Promise.resolve('not required');
+                }
+            }
+
             document.addEventListener('DOMContentLoaded', function () {
                 const startButton = document.getElementById('startButton');
-                const videos = [];
-
-                for (let i = 1; i <= 22; i++) {
-                    videos.push(document.getElementById(`vid${i}`));
-                }
 
                 startButton.addEventListener('click', function () {
                     // ビデオをロードするだけで再生はしない
-                    videos.forEach(video => {
+                    const videos = [];
+                    for (let i = 1; i <= 22; i++) {
+                        const video = document.getElementById(`vid${i}`);
                         video.load();
-                    });
-
-                    // カメラの使用許可を取得後にボタンを非表示にする
-                    const cameraPromise = navigator.mediaDevices.getUserMedia({ video: true });
-
-                    // モーションセンサーの許可が必要な場合は、ここで処理を追加する
-                    let motionPromise = Promise.resolve();
-                    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                        motionPromise = DeviceMotionEvent.requestPermission();
+                        videos.push(video);
                     }
 
-                    // 全ての許可が完了した後にボタンを非表示にする
-                    Promise.all([cameraPromise, motionPromise])
-                        .then(function() {
-                            hideStartButton();
-                        })
-                        .catch(function(error) {
-                            console.error('許可が取得できませんでした:', error);
-                        });
+                    startAR();
                 });
             });
         </script>
@@ -102,7 +84,6 @@
             loading-screen="enabled: false;"
             arjs='sourceType: webcam; debugUIEnabled: false;'
             embedded
-            gesture-detector
         >
             <a-assets>
                 <!-- 22個のビデオアセット -->
