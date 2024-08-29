@@ -63,16 +63,12 @@
                 }
 
                 startButton.addEventListener('click', function () {
+                    // ビデオをロードするだけで再生はしない
                     videos.forEach(video => {
-                        video.play().then(() => {
-                            video.pause();
-                            video.currentTime = 0;
-                        }).catch(error => {
-                            console.log('Error playing video: ', error);
-                        });
+                        video.load();
                     });
 
-                    // スタートボタンを非表示
+                    // スタートボタンを非表示にする
                     startButton.style.display = 'none';
                 });
             });
