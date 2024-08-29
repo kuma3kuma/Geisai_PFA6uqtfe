@@ -3,7 +3,6 @@
     <head>
         <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
         <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
         <style>
             #startButton {
                 position: absolute;
@@ -54,6 +53,11 @@
                 },
             });
 
+            function hideStartButton() {
+                const startButton = document.getElementById('startButton');
+                startButton.style.display = 'none';
+            }
+
             document.addEventListener('DOMContentLoaded', function () {
                 const startButton = document.getElementById('startButton');
                 const videos = [];
@@ -68,8 +72,25 @@
                         video.load();
                     });
 
-                    // スタートボタンを非表示にする
-                    startButton.style.display = 'none';
+                    // カメラの使用許可を取得後にボタンを非表示にする
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(function(stream) {
+                            hideStartButton();
+                        })
+                        .catch(function(error) {
+                            console.error('カメラの使用が許可されませんでした:', error);
+                        });
+
+                    // モーションセンサーの許可が必要な場合は、ここで処理を追加する
+                    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                        DeviceMotionEvent.requestPermission()
+                            .then(response => {
+                                if (response === 'granted') {
+                                    hideStartButton();
+                                }
+                            })
+                            .catch(console.error);
+                    }
                 });
             });
         </script>
